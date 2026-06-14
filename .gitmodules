@@ -1,0 +1,12 @@
+[submodule "vendor/context-hub"]
+	path = vendor/context-hub
+	url = https://github.com/andrewyng/context-hub.git
+[submodule "vendor/geo-seo-claude"]
+	path = vendor/geo-seo-claude
+	url = https://github.com/zubair-trabzada/geo-seo-claude.git
+[submodule "vendor/azure-skills"]
+	path = vendor/azure-skills
+	url = https://github.com/microsoft/azure-skills.git
+[submodule "vendor/ponytail"]
+	path = vendor/ponytail
+	url = https://github.com/DietrichGebert/ponytail.git
