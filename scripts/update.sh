@@ -2,7 +2,7 @@
 # Met à jour toutes les sources vers leur dernière version d'origine, puis
 # réinstalle les liens dans ~/.claude/skills/.
 set -euo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")"
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 echo "→ Mise à jour des sous-modules vers l'origine…"
 git submodule update --init --remote --merge
@@ -12,7 +12,7 @@ curl -fsSL "https://www.alphaxiv.org/skills/alphaxiv-paper-lookup/SKILL.md" \
   -o skills/alphaxiv-paper-lookup/SKILL.md || echo "  ! échec du fetch alphaxiv (ignoré)"
 
 echo "→ Réinstallation des liens…"
-./install.sh
+scripts/install.sh
 
 echo
 echo "Pense à committer les nouveaux pointeurs de sous-modules :"
