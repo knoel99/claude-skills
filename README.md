@@ -36,13 +36,31 @@ Or symlink every skill into `~/.claude/skills/` (set `CLAUDE_SKILLS_DIR` to chan
 git clone https://github.com/knoel99/skills.git && skills/scripts/install.sh
 ```
 
+## Dev setup: pstack + ponytail everywhere
+
+[`scripts/dev-setup.sh`](scripts/dev-setup.sh) installs [pstack](https://github.com/cursor/plugins/tree/main/pstack)
+(Lauren Tan) and [ponytail](https://github.com/DietrichGebert/ponytail) for every agent it finds:
+Claude Code plugins, Codex plugin, Cursor skills and hooks, and `~/.agents/skills` for the rest.
+It is idempotent: a few seconds the first time, about a second afterwards.
+
+| Where | How it runs |
+|-------|-------------|
+| Claude Code, local or cloud | Automatically: `SessionStart` hook in `.claude/settings.json`; both are also declared as project plugins |
+| Codex CLI, Cursor, other agents, local | Run `scripts/dev-setup.sh` once; [`AGENTS.md`](AGENTS.md) tells them to use both |
+| Codex cloud / any cloud with a setup script | Set the environment's setup script to `bash scripts/dev-setup.sh` |
+| Another machine, without cloning this repo | `curl -fsSL https://raw.githubusercontent.com/knoel99/skills/master/scripts/dev-setup.sh \| bash` |
+
+`scripts/dev-setup.sh --status` shows what is installed; `--update` pulls both repos and
+updates the Claude plugins. Opt out of a step with `DEV_SETUP_SKIP="codex cursor"`.
+
 ## Third-party skills
 
 Skills I use but don't maintain. They are not copied here; install them from their source.
 
 | Skill | Source | Install |
 |-------|--------|---------|
-| ponytail | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) | `/plugin marketplace add DietrichGebert/ponytail` |
+| ponytail | [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail) | `scripts/dev-setup.sh` (see above) |
+| pstack | [cursor/plugins](https://github.com/cursor/plugins/tree/main/pstack) | `scripts/dev-setup.sh` (see above) |
 | Azure skills | [microsoft/azure-skills](https://github.com/microsoft/azure-skills) | `/plugin marketplace add microsoft/azure-skills` |
 | context-hub | [andrewyng/context-hub](https://github.com/andrewyng/context-hub) | See its README (`chub` CLI + `get-api-docs` skill) |
 | geo-seo-claude | [zubair-trabzada/geo-seo-claude](https://github.com/zubair-trabzada/geo-seo-claude) | See its README (`install.sh`) |
