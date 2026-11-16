@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # dev-setup.sh — install gstack and ponytail for every coding agent found on
-# this machine (Claude Code, Codex, any agent reading ~/.agents/skills).
+# this machine (Claude Code, Codex, Cursor, any agent reading ~/.agents/skills).
 #
 # Idempotent and fast when nothing changed: each step leaves a marker and is
 # skipped next time. Safe to run from a SessionStart hook, a cloud environment
@@ -14,7 +14,7 @@
 #   GSTACK_DIR          gstack checkout   (default ~/.claude/skills/gstack)
 #   PONYTAIL_DIR        ponytail checkout (default ~/.local/share/ponytail)
 #   GSTACK_SETUP_ARGS   args for gstack's ./setup (default "--team --host auto -q")
-#   DEV_SETUP_SKIP      space-separated steps to skip: gstack ponytail claude codex agents
+#   DEV_SETUP_SKIP      space-separated steps to skip: gstack ponytail claude codex cursor agents
 #   DEV_SETUP_LOG       log file (default ~/.cache/dev-setup.log)
 #
 # A failed step prints a warning and is retried on the next run; the script
@@ -123,6 +123,17 @@ if ! skip codex && have codex; then
     ok+=("codex: ponytail plugin installed (trust its hooks once with /hooks)")
   else
     warn+=("codex: ponytail plugin install failed (see $LOG)")
+  fi
+fi
+
+# ── Cursor: ponytail's native hooks in ~/.cursor/hooks.json ─────────────
+if ! skip cursor && [ -d "$HOME/.cursor" ] && have node && [ -f "$PONYTAIL_DIR/scripts/cursor-hooks.js" ]; then
+  if [ -f "$MARKERS/cursor-ponytail" ]; then
+    ok+=("cursor: ponytail hooks present")
+  elif run node "$PONYTAIL_DIR/scripts/cursor-hooks.js" install; then
+    touch "$MARKERS/cursor-ponytail"; ok+=("cursor: ponytail hooks installed")
+  else
+    warn+=("cursor: ponytail hooks install failed (see $LOG)")
   fi
 fi
 

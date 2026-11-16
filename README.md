@@ -40,13 +40,13 @@ git clone https://github.com/knoel99/skills.git && skills/scripts/install.sh
 
 [`scripts/dev-setup.sh`](scripts/dev-setup.sh) installs [gstack](https://github.com/garrytan/gstack)
 and [ponytail](https://github.com/DietrichGebert/ponytail) for every agent it finds
-(Claude Code and Codex plugins, `~/.agents/skills` for the rest). It is idempotent:
+(Claude Code and Codex plugins, Cursor hooks, `~/.agents/skills` for the rest). It is idempotent:
 about 45 s the first time, under a second afterwards.
 
 | Where | How it runs |
 |-------|-------------|
 | Claude Code, local or cloud | Automatically: `SessionStart` hook in `.claude/settings.json`; ponytail is also declared as a project plugin |
-| Codex CLI / other agents, local | Run `scripts/dev-setup.sh` once; [`AGENTS.md`](AGENTS.md) tells them to use both |
+| Codex CLI, Cursor, other agents, local | Run `scripts/dev-setup.sh` once; [`AGENTS.md`](AGENTS.md) tells them to use both |
 | Codex cloud / any cloud with a setup script | Set the environment's setup script to `bash scripts/dev-setup.sh` |
 | Another machine, without cloning this repo | `curl -fsSL https://raw.githubusercontent.com/knoel99/skills/main/scripts/dev-setup.sh \| bash` |
 
