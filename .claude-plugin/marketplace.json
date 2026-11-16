@@ -21,11 +21,11 @@
     },
     {
       "name": "general",
-      "description": "Concept explanation through fables and Claude Code configuration.",
+      "description": "Academic principles illustrated through short stories, and Claude Code configuration.",
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/general/amanda-explains",
+        "./skills/general/amanda-askill",
         "./skills/general/config-claude-code"
       ]
     }

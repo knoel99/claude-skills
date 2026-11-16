@@ -17,7 +17,7 @@ Each skill is a folder with a `SKILL.md` and optional `scripts/`, `references/` 
 
 | Skill | What it does |
 |-------|--------------|
-| [`amanda-explains`](skills/general/amanda-explains) | Teaches an advanced concept through a fable with a late reveal |
+| [`amanda-askill`](skills/general/amanda-askill) | Illustrates a niche academic principle with a three-paragraph story, named and explained only at the end |
 | [`config-claude-code`](skills/general/config-claude-code) | Switches the Claude Code provider (Anthropic / z.ai) and edits `settings.json` |
 
 ## Install
