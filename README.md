@@ -48,7 +48,7 @@ It is idempotent: a few seconds the first time, about a second afterwards.
 | Claude Code, local or cloud | Automatically: `SessionStart` hook in `.claude/settings.json`; both are also declared as project plugins |
 | Codex CLI, Cursor, other agents, local | Run `scripts/dev-setup.sh` once; [`AGENTS.md`](AGENTS.md) tells them to use both |
 | Codex cloud / any cloud with a setup script | Set the environment's setup script to `bash scripts/dev-setup.sh` |
-| Another machine, without cloning this repo | `curl -fsSL https://raw.githubusercontent.com/knoel99/skills/main/scripts/dev-setup.sh \| bash` |
+| Another machine, without cloning this repo | `curl -fsSL https://raw.githubusercontent.com/knoel99/skills/master/scripts/dev-setup.sh \| bash` |
 
 `scripts/dev-setup.sh --status` shows what is installed; `--update` pulls both repos and
 updates the Claude plugins. Opt out of a step with `DEV_SETUP_SKIP="codex cursor"`.
