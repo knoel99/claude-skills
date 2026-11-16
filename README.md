@@ -19,7 +19,6 @@ Each skill is a folder with a `SKILL.md` and optional `scripts/`, `references/` 
 |-------|--------------|
 | [`amanda-explains`](skills/general/amanda-explains) | Teaches an advanced concept through a fable with a late reveal |
 | [`config-claude-code`](skills/general/config-claude-code) | Switches the Claude Code provider (Anthropic / z.ai) and edits `settings.json` |
-| [`nuclear-ponytail`](skills/general/nuclear-ponytail) | Combined code review: quality audit + over-engineering pass (needs [ponytail](https://github.com/DietrichGebert/ponytail)) |
 
 ## Install
 

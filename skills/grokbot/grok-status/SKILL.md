@@ -12,32 +12,40 @@ description: >
 
 ## When to use
 
-Use this at the start of a Grok Heavy job if `~/.grok/heavy/status.py` is missing, and again beside every `grok` launch so the log is followed while the process runs.
+Use this at the start of a Grok Heavy job, and again beside every `grok` launch so the log is followed while the process runs.
 
 Do not use it to research, judge, or rewrite `output.md`.
 
-## Install once
+## Find the program
 
-Ask once before any download. Show this URL:
+Use the first one that exists, and call it `STATUS`:
+
+1. `scripts/grok-status.py` in this skill's folder (Claude, Cursor or Grok Build already has it on disk).
+2. `~/.grok/heavy/status.py` from an earlier job.
+
+Only if neither exists, ask once before downloading. Show this URL:
 
 `https://github.com/knoel99/skills/tree/master/skills/grokbot/grok-status`
 
-Do not download before a yes. On no, stop.
+Do not download before a yes. On no, stop. On yes, run:
 
-On yes, download only this file:
+```bash
+mkdir -p ~/.grok/heavy
+curl -fsSL -o ~/.grok/heavy/status.py.tmp \
+  https://raw.githubusercontent.com/knoel99/skills/master/skills/grokbot/grok-status/scripts/grok-status.py \
+  && python3 ~/.grok/heavy/status.py.tmp --help >/dev/null \
+  && mv ~/.grok/heavy/status.py.tmp ~/.grok/heavy/status.py
+```
 
-`https://raw.githubusercontent.com/knoel99/skills/master/skills/grokbot/grok-status/scripts/grok-status.py`
-
-Write it to `~/.grok/heavy/status.py`. Do not rewrite it on a later job.
-
-If this folder is already on disk (Cursor, Claude, or Grok Build), skip the download and run `scripts/grok-status.py` from the skill directory.
+If any step fails, delete `~/.grok/heavy/status.py.tmp`, report the error, and stop. Do not start grok with a broken or missing status program. Never overwrite a working `~/.grok/heavy/status.py`.
 
 ## Run
 
-Start it beside grok. It is not a second grok.
+Start it beside grok. It is not a second grok. Create the run folder first.
 
 ```bash
-python3 ~/.grok/heavy/status.py \
+mkdir -p /workspace/runs/<id>
+python3 "$STATUS" \
   --log /workspace/runs/<id>/run.log \
   --out /workspace/runs/<id>/status.txt \
   --messages /workspace/runs/<id>/messages.jsonl \
