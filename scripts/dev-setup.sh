@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # dev-setup.sh — install pstack (Lauren Tan, cursor/plugins) and ponytail
 # (DietrichGebert/ponytail) for every coding agent found on this machine:
-# Claude Code, Codex, Cursor, and any agent reading ~/.agents/skills.
+# Claude Code, Codex, Copilot CLI, Gemini CLI, OpenCode, Cursor, and any agent
+# reading ~/.agents/skills.
 #
 # Idempotent and fast when nothing changed: finished steps are skipped.
 # Safe to run from a SessionStart hook, a cloud environment setup script, or
@@ -13,7 +14,7 @@
 #
 # Environment:
 #   DEV_SETUP_HOME   where the checkouts go (default ~/.local/share/dev-setup)
-#   DEV_SETUP_SKIP   space-separated steps to skip: claude codex cursor agents
+#   DEV_SETUP_SKIP   space-separated steps to skip: claude codex copilot gemini opencode cursor agents
 #   DEV_SETUP_LOG    log file (default ~/.cache/dev-setup.log)
 #
 # A failed step prints a warning and is retried on the next run; the script
@@ -61,14 +62,16 @@ claude_plugin() {
 }
 
 status() {
+  local a
   printf '%-9s %s\n' pstack   "$( [ -d "$PSTACK_DIR/pstack/skills" ] && echo "ok ($PSTACK_DIR/pstack)" || echo missing)"
   printf '%-9s %s\n' ponytail "$( [ -f "$PONYTAIL_DIR/AGENTS.md" ] && echo "ok ($PONYTAIL_DIR)" || echo missing)"
   if have claude; then
     printf '%-9s %s\n' claude "$(claude plugin list 2>/dev/null | grep -oE '(pstack|ponytail)@[a-z-]+' | sort -u | tr '\n' ' ')"
   fi
-  if have codex; then
-    printf '%-9s %s\n' codex "$( [ -f "$MARKERS/codex-ponytail" ] && echo 'ponytail plugin installed' || echo 'ponytail plugin missing'), skills in ~/.agents/skills"
-  fi
+  for a in codex copilot gemini opencode; do
+    have "$a" && "$a" --version >/dev/null 2>&1 && printf '%-9s %s\n' "$a" "$( [ -f "$MARKERS/$a-ponytail" ] && echo 'ponytail plugin installed' || echo 'ponytail plugin missing'), skills in ~/.agents/skills"
+  done
+  return 0
 }
 
 if [ "$MODE" = "--status" ]; then status; exit 0; fi
@@ -95,18 +98,36 @@ if ! skip claude && have claude; then
   claude_plugin ponytail@ponytail DietrichGebert/ponytail
 fi
 
-# ── Codex: ponytail plugin (pstack's skills come through ~/.agents/skills) ─
-if ! skip codex && have codex; then
-  if [ -f "$MARKERS/codex-ponytail" ]; then
-    ok+=("codex: ponytail plugin present")
-  elif run codex plugin marketplace add DietrichGebert/ponytail \
-       && run codex plugin add ponytail@ponytail; then
-    touch "$MARKERS/codex-ponytail"
-    ok+=("codex: ponytail plugin installed (trust its hooks once with /hooks)")
-  else
-    warn+=("codex: ponytail plugin install failed (see $LOG)")
-  fi
-fi
+# ── Other CLIs: ponytail through each one's own plugin system ────────────
+# once NAME LABEL CMD...: run CMD once per machine (marker file), skip if the CLI is absent.
+once() {
+  local name="$1" label="$2"; shift 2
+  skip "$name" && return 0
+  have "$name" && "$name" --version >/dev/null 2>&1 || return 0   # real CLI, not a stub
+  if [ -f "$MARKERS/$name-ponytail" ]; then ok+=("$name: ponytail present")
+  elif "$@"; then touch "$MARKERS/$name-ponytail"; ok+=("$name: ponytail installed$label")
+  else warn+=("$name: ponytail install failed (see $LOG)"); fi
+}
+codex_install()   { run codex plugin marketplace add DietrichGebert/ponytail && run codex plugin add ponytail@ponytail; }
+copilot_install() { run copilot plugin marketplace add DietrichGebert/ponytail && run copilot plugin install ponytail@ponytail; }
+once codex   " (trust its hooks once with /hooks)" codex_install
+once copilot ""                                    copilot_install
+once gemini  ""  run gemini extensions install https://github.com/DietrichGebert/ponytail --consent
+# OpenCode 1 has no `plugin add`: register the npm plugin in its global config.
+opencode_install() {
+  local cfg="$HOME/.config/opencode/opencode.json"
+  mkdir -p "$(dirname "$cfg")"
+  python3 - "$cfg" <<'PY' >>"$LOG" 2>&1
+import json, os, sys
+p = sys.argv[1]
+c = json.load(open(p)) if os.path.exists(p) else {}
+c.setdefault("plugin", [])
+if "@dietrichgebert/ponytail" not in c["plugin"]:
+    c["plugin"].append("@dietrichgebert/ponytail")
+json.dump(c, open(p, "w"), indent=2)
+PY
+}
+once opencode "" opencode_install
 
 # ── Cursor: pstack skills + ponytail's native hooks ──────────────────────
 if ! skip cursor && [ -d "$HOME/.cursor" ]; then

@@ -40,7 +40,7 @@ git clone https://github.com/knoel99/skills.git && skills/scripts/install.sh
 
 [`scripts/dev-setup.sh`](scripts/dev-setup.sh) installs [pstack](https://github.com/cursor/plugins/tree/main/pstack)
 (Lauren Tan) and [ponytail](https://github.com/DietrichGebert/ponytail) for every agent it finds:
-Claude Code plugins, Codex plugin, Cursor skills and hooks, and `~/.agents/skills` for the rest.
+Claude Code, Codex, Copilot CLI, Gemini CLI and OpenCode plugins, Cursor skills and hooks, and `~/.agents/skills` for the rest.
 It is idempotent: a few seconds the first time, about a second afterwards.
 
 | Where | How it runs |
