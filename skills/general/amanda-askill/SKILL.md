@@ -1,9 +1,9 @@
 ---
-name: amanda-explains
+name: amanda-askill
 description: Picks a somewhat niche principle or idea from an academic discipline (one early undergraduates wouldn't have heard of but late graduate students would) and illustrates it with a short three-paragraph story that never names it, then names and explains it in a single closing paragraph. Use this skill whenever the user asks for an "academic allegory", or for a story, fable or parable that illustrates an idea or principle from a field; whenever they ask to explain a concept "through a story" or "without naming it"; whenever they ask to be taught something obscure but interesting from a discipline; or whenever they invoke Amanda Askell's prompt for illustrating an academic principle with a story.
 ---
 
-# Amanda Explains
+# Amanda Askill
 
 A faithful packaging of a prompt Amanda Askell shared on 9 March 2025. She described the habit this way: "I like to ask Claude to pick an idea or principle from some academic domain and to illustrate it for me with a story. Reading these little academic allegories has become my wholesome replacement for doomscrolling."
 

@@ -25,7 +25,7 @@
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/general/amanda-explains",
+        "./skills/general/amanda-askill",
         "./skills/general/config-claude-code"
       ]
     }
