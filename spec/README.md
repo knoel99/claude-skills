@@ -1,13 +1,12 @@
-# Spécification Agent Skills
+# Agent Skills specification
 
-Les skills de ce dépôt suivent le standard ouvert **Agent Skills** : https://agentskills.io/specification
+Skills here follow the open [Agent Skills](https://agentskills.io/specification) standard.
+`scripts/validate_skills.py` enforces these rules in CI:
 
-Règles appliquées ici (vérifiées par `scripts/validate_skills.py` en CI) :
-
-| Règle | Détail |
-|-------|--------|
-| Un dossier par skill | `skills/<name>/SKILL.md` |
-| `name` | obligatoire, minuscules, chiffres et tirets, ≤ 64 caractères, identique au nom du dossier |
-| `description` | obligatoire, ≤ 1024 caractères, dit quoi faire **et quand** |
-| Ressources | `scripts/`, `references/`, `assets/` (facultatifs), chemins relatifs au dossier de la skill |
-| Catalogue | chaque skill appartient à exactement un plugin dans `.claude-plugin/marketplace.json` |
+| Rule | Detail |
+|------|--------|
+| Layout | `skills/<group>/<name>/SKILL.md` |
+| `name` | required, lowercase letters, digits and hyphens, ≤ 64 chars, equals the folder name, unique |
+| `description` | required, ≤ 1024 chars, says what the skill does **and when** to use it |
+| Resources | optional `scripts/`, `references/`, `assets/`, paths relative to the skill folder |
+| Catalog | each skill belongs to exactly one plugin in `.claude-plugin/marketplace.json` |

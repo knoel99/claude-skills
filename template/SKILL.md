@@ -1,24 +1,24 @@
 ---
 name: my-skill-name
 description: >
-  Ce que fait la skill et QUAND l'utiliser (déclencheurs concrets, mots-clés).
-  Dire aussi quand NE PAS l'utiliser. 1024 caractères maximum.
+  What the skill does and WHEN to use it (concrete triggers, keywords).
+  Also say when NOT to use it. 1024 characters max.
 ---
 
 # my-skill-name
 
 ## When to use
 
-- Situation déclenchante 1
-- Situation déclenchante 2
+- Trigger 1
+- Trigger 2
 
 ## Workflow
 
-1. Première étape.
-2. Deuxième étape.
+1. First step.
+2. Second step.
 
 ## Resources
 
-- `scripts/` : code exécutable (tests à côté : `scripts/test_*.py`).
-- `references/` : documentation chargée seulement si besoin.
-- `assets/` : modèles et fichiers copiés tels quels dans la sortie.
+- `scripts/`: executable code (tests alongside as `scripts/test_*.py`).
+- `references/`: docs loaded only when needed.
+- `assets/`: templates and files copied as-is into the output.

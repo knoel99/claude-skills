@@ -4,39 +4,29 @@
     "name": "knoel99"
   },
   "metadata": {
-    "description": "Agent Skills maison pour Claude Code et Grok Build : simulation multi-agents, recherche et pédagogie, outillage développeur.",
-    "version": "1.0.0"
+    "description": "Personal Agent Skills for Claude Code and Grok Build.",
+    "version": "2.0.0"
   },
   "plugins": [
     {
-      "name": "agent-simulation",
-      "description": "Scènes multi-bots avec une session grok headless par bot : orchestration, tours de dialogue privés/publics et suivi d'état.",
+      "name": "grokbot",
+      "description": "Multi-bot scenes with one headless grok session per bot: orchestration, private/public dialogue turns and run status.",
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/agora-scene",
-        "./skills/dialogue-turns",
-        "./skills/grok-status"
+        "./skills/grokbot/agora-scene",
+        "./skills/grokbot/dialogue-turns",
+        "./skills/grokbot/grok-status"
       ]
     },
     {
-      "name": "research-learning",
-      "description": "Lecture d'articles scientifiques et explication de concepts avancés par la narration.",
+      "name": "general",
+      "description": "Concept explanation through fables and Claude Code configuration.",
       "source": "./",
       "strict": false,
       "skills": [
-        "./skills/alphaxiv-paper-lookup",
-        "./skills/amanda-explains"
-      ]
-    },
-    {
-      "name": "developer-tools",
-      "description": "Configuration de Claude Code et revue de code combinée.",
-      "source": "./",
-      "strict": false,
-      "skills": [
-        "./skills/config-claude-code",
-        "./skills/nuclear-ponytail"
+        "./skills/general/amanda-explains",
+        "./skills/general/config-claude-code"
       ]
     }
   ]
