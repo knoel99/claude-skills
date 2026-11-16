@@ -1,119 +1,101 @@
 #!/usr/bin/env bash
-# dev-setup.sh — install gstack and ponytail for every coding agent found on
-# this machine (Claude Code, Codex, Cursor, any agent reading ~/.agents/skills).
+# dev-setup.sh — install pstack (Lauren Tan, cursor/plugins) and ponytail
+# (DietrichGebert/ponytail) for every coding agent found on this machine:
+# Claude Code, Codex, Cursor, and any agent reading ~/.agents/skills.
 #
-# Idempotent and fast when nothing changed: each step leaves a marker and is
-# skipped next time. Safe to run from a SessionStart hook, a cloud environment
-# setup script, or by hand:
+# Idempotent and fast when nothing changed: finished steps are skipped.
+# Safe to run from a SessionStart hook, a cloud environment setup script, or
+# by hand:
 #
 #   scripts/dev-setup.sh            # install / repair
 #   scripts/dev-setup.sh --status   # show what is installed, change nothing
-#   scripts/dev-setup.sh --update   # pull both repos, then re-run their setup
+#   scripts/dev-setup.sh --update   # pull both repos and the Claude plugins
 #
 # Environment:
-#   GSTACK_DIR          gstack checkout   (default ~/.claude/skills/gstack)
-#   PONYTAIL_DIR        ponytail checkout (default ~/.local/share/ponytail)
-#   GSTACK_SETUP_ARGS   args for gstack's ./setup (default "--team --host auto -q")
-#   DEV_SETUP_SKIP      space-separated steps to skip: gstack ponytail claude codex cursor agents
-#   DEV_SETUP_LOG       log file (default ~/.cache/dev-setup.log)
+#   DEV_SETUP_HOME   where the checkouts go (default ~/.local/share/dev-setup)
+#   DEV_SETUP_SKIP   space-separated steps to skip: claude codex cursor agents
+#   DEV_SETUP_LOG    log file (default ~/.cache/dev-setup.log)
 #
 # A failed step prints a warning and is retried on the next run; the script
 # itself exits 0 so it never blocks an agent session (use --status to check).
 set -uo pipefail
 
-GSTACK_REPO="https://github.com/garrytan/gstack.git"
-PONYTAIL_REPO="https://github.com/DietrichGebert/ponytail.git"
-GSTACK_DIR="${GSTACK_DIR:-$HOME/.claude/skills/gstack}"
-PONYTAIL_DIR="${PONYTAIL_DIR:-$HOME/.local/share/ponytail}"
-GSTACK_SETUP_ARGS="${GSTACK_SETUP_ARGS:---team --host auto -q}"
+HOME_DIR="${DEV_SETUP_HOME:-$HOME/.local/share/dev-setup}"
+PSTACK_DIR="$HOME_DIR/cursor-plugins"     # sparse checkout: pstack/ only
+PONYTAIL_DIR="$HOME_DIR/ponytail"
 SKIP=" ${DEV_SETUP_SKIP:-} "
 LOG="${DEV_SETUP_LOG:-$HOME/.cache/dev-setup.log}"
 MARKERS="$HOME/.cache/dev-setup"
 MODE="${1:-install}"
 
-mkdir -p "$(dirname "$LOG")" "$MARKERS"
-export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"
-
+mkdir -p "$(dirname "$LOG")" "$MARKERS" "$HOME_DIR"
 ok=(); warn=()
 skip() { [[ "$SKIP" == *" $1 "* ]]; }
 have() { command -v "$1" >/dev/null 2>&1; }
 run() { echo "+ $*" >>"$LOG"; "$@" >>"$LOG" 2>&1; }
-head_of() { git -C "$1" rev-parse HEAD 2>/dev/null; }
 
-# Clone $2 into $1, or fast-forward it when --update is given.
-checkout() {
-  local dir="$1" url="$2"
-  if [ ! -d "$dir/.git" ]; then
-    mkdir -p "$(dirname "$dir")"
-    run git clone --single-branch --depth 1 "$url" "$dir"
-  elif [ "$MODE" = "--update" ]; then
-    run git -C "$dir" pull --ff-only
+# Symlink every skill folder of $1 into $2 (never replaces a real directory).
+link_skills() {
+  local src="$1" dest="$2" s
+  mkdir -p "$dest"
+  for s in "$src"/*/; do
+    [ -f "$s/SKILL.md" ] || continue
+    [ -e "$dest/$(basename "$s")" ] && [ ! -L "$dest/$(basename "$s")" ] && continue
+    ln -sfn "${s%/}" "$dest/$(basename "$s")"
+  done
+}
+
+# Install a Claude Code plugin at user scope (every project): $1 plugin@market, $2 marketplace repo.
+claude_plugin() {
+  local plugin="$1" market="${1#*@}" repo="$2"
+  if claude plugin list 2>/dev/null | grep -q "$plugin"; then
+    [ "$MODE" = "--update" ] && run claude plugin update "$plugin"
+    ok+=("claude: $plugin present")
+  elif { claude plugin marketplace list 2>/dev/null | grep -q "$market" \
+         || run claude plugin marketplace add "$repo"; } \
+       && run claude plugin install "$plugin"; then
+    ok+=("claude: $plugin installed (active from the next session)")
+  else
+    warn+=("claude: $plugin install failed (see $LOG)")
   fi
 }
 
 status() {
-  printf '%-10s %s\n' gstack   "$( [ -d "$GSTACK_DIR/bin" ] && echo "ok ($GSTACK_DIR, $(cat "$GSTACK_DIR/VERSION" 2>/dev/null))" || echo missing)"
-  printf '%-10s %s\n' ponytail "$( [ -f "$PONYTAIL_DIR/AGENTS.md" ] && echo "ok ($PONYTAIL_DIR)" || echo missing)"
+  printf '%-9s %s\n' pstack   "$( [ -d "$PSTACK_DIR/pstack/skills" ] && echo "ok ($PSTACK_DIR/pstack)" || echo missing)"
+  printf '%-9s %s\n' ponytail "$( [ -f "$PONYTAIL_DIR/AGENTS.md" ] && echo "ok ($PONYTAIL_DIR)" || echo missing)"
   if have claude; then
-    printf '%-10s %s\n' claude "$(claude plugin list 2>/dev/null | grep -q 'ponytail' && echo 'ponytail plugin installed' || echo 'ponytail plugin missing')"
+    printf '%-9s %s\n' claude "$(claude plugin list 2>/dev/null | grep -oE '(pstack|ponytail)@[a-z-]+' | sort -u | tr '\n' ' ')"
   fi
   if have codex; then
-    printf '%-10s %s\n' codex "$( [ -f "$MARKERS/codex-ponytail" ] && echo 'ponytail plugin installed' || echo 'ponytail plugin missing')"
+    printf '%-9s %s\n' codex "$( [ -f "$MARKERS/codex-ponytail" ] && echo 'ponytail plugin installed' || echo 'ponytail plugin missing'), skills in ~/.agents/skills"
   fi
 }
 
 if [ "$MODE" = "--status" ]; then status; exit 0; fi
 echo "=== dev-setup $(date -u +%FT%TZ) ===" >>"$LOG"
 
-# ── gstack ──────────────────────────────────────────────────────────────
-if ! skip gstack; then
-  if ! have bun; then
-    # gstack's ./setup needs Bun (https://bun.sh). Official installer, user-local.
-    run bash -c 'curl -fsSL https://bun.sh/install | bash'
-  fi
-  if ! have bun; then
-    warn+=("gstack: Bun is missing and could not be installed (see $LOG)")
-  elif ! checkout "$GSTACK_DIR" "$GSTACK_REPO"; then
-    warn+=("gstack: clone/pull failed (see $LOG)")
-  else
-    stamp="$(head_of "$GSTACK_DIR") $GSTACK_SETUP_ARGS"
-    if [ "$(cat "$MARKERS/gstack" 2>/dev/null)" = "$stamp" ]; then
-      ok+=("gstack: up to date")
-    else
-      rm -f "$MARKERS/gstack"
-      # shellcheck disable=SC2086 # GSTACK_SETUP_ARGS is a word list on purpose
-      if (cd "$GSTACK_DIR" && run ./setup $GSTACK_SETUP_ARGS </dev/null); then
-        echo "$stamp" >"$MARKERS/gstack"; ok+=("gstack: installed")
-      else
-        warn+=("gstack: ./setup failed (see $LOG)")
-      fi
-    fi
-  fi
+# ── Checkouts (for agents without a plugin system, and for AGENTS.md) ────
+if [ ! -d "$PSTACK_DIR/.git" ]; then
+  run git clone --depth 1 --filter=blob:none --sparse https://github.com/cursor/plugins.git "$PSTACK_DIR" \
+    && run git -C "$PSTACK_DIR" sparse-checkout set pstack \
+    || { rm -rf "$PSTACK_DIR"; warn+=("pstack: clone failed (see $LOG)"); }
+elif [ "$MODE" = "--update" ]; then
+  run git -C "$PSTACK_DIR" pull --ff-only || warn+=("pstack: pull failed (see $LOG)")
+fi
+if [ ! -d "$PONYTAIL_DIR/.git" ]; then
+  run git clone --depth 1 https://github.com/DietrichGebert/ponytail.git "$PONYTAIL_DIR" \
+    || warn+=("ponytail: clone failed (see $LOG)")
+elif [ "$MODE" = "--update" ]; then
+  run git -C "$PONYTAIL_DIR" pull --ff-only || warn+=("ponytail: pull failed (see $LOG)")
 fi
 
-# ── ponytail checkout (ruleset + skills for agents without a plugin) ──────
-if ! skip ponytail; then
-  if checkout "$PONYTAIL_DIR" "$PONYTAIL_REPO"; then
-    ok+=("ponytail: $PONYTAIL_DIR")
-  else
-    warn+=("ponytail: clone/pull failed (see $LOG)")
-  fi
-fi
-
-# ── Claude Code: ponytail plugin at user scope (every project) ───────────
+# ── Claude Code: both as plugins ─────────────────────────────────────────
 if ! skip claude && have claude; then
-  if claude plugin list 2>/dev/null | grep -q 'ponytail'; then
-    ok+=("claude: ponytail plugin present")
-  elif { claude plugin marketplace list 2>/dev/null | grep -q 'ponytail' \
-         || run claude plugin marketplace add DietrichGebert/ponytail; } \
-       && run claude plugin install ponytail@ponytail; then
-    ok+=("claude: ponytail plugin installed (active from the next session)")
-  else
-    warn+=("claude: ponytail plugin install failed (see $LOG)")
-  fi
+  claude_plugin pstack@cursor-plugins cursor/plugins
+  claude_plugin ponytail@ponytail DietrichGebert/ponytail
 fi
 
-# ── Codex: ponytail plugin ──────────────────────────────────────────────
+# ── Codex: ponytail plugin (pstack's skills come through ~/.agents/skills) ─
 if ! skip codex && have codex; then
   if [ -f "$MARKERS/codex-ponytail" ]; then
     ok+=("codex: ponytail plugin present")
@@ -126,26 +108,23 @@ if ! skip codex && have codex; then
   fi
 fi
 
-# ── Cursor: ponytail's native hooks in ~/.cursor/hooks.json ─────────────
-if ! skip cursor && [ -d "$HOME/.cursor" ] && have node && [ -f "$PONYTAIL_DIR/scripts/cursor-hooks.js" ]; then
+# ── Cursor: pstack skills + ponytail's native hooks ──────────────────────
+if ! skip cursor && [ -d "$HOME/.cursor" ]; then
+  [ -d "$PSTACK_DIR/pstack/skills" ] && link_skills "$PSTACK_DIR/pstack/skills" "$HOME/.cursor/skills"
   if [ -f "$MARKERS/cursor-ponytail" ]; then
-    ok+=("cursor: ponytail hooks present")
-  elif run node "$PONYTAIL_DIR/scripts/cursor-hooks.js" install; then
-    touch "$MARKERS/cursor-ponytail"; ok+=("cursor: ponytail hooks installed")
+    ok+=("cursor: pstack skills + ponytail hooks present")
+  elif have node && [ -f "$PONYTAIL_DIR/scripts/cursor-hooks.js" ] \
+       && run node "$PONYTAIL_DIR/scripts/cursor-hooks.js" install; then
+    touch "$MARKERS/cursor-ponytail"; ok+=("cursor: pstack skills + ponytail hooks installed")
   else
     warn+=("cursor: ponytail hooks install failed (see $LOG)")
   fi
 fi
 
-# ── Generic agents: ~/.agents/skills (Codex and other skills-aware CLIs) ─
-if ! skip agents && [ -d "$PONYTAIL_DIR/skills" ]; then
-  mkdir -p "$HOME/.agents/skills"
-  for s in "$PONYTAIL_DIR"/skills/*/; do
-    [ -f "$s/SKILL.md" ] || continue
-    dest="$HOME/.agents/skills/$(basename "$s")"
-    [ -e "$dest" ] && [ ! -L "$dest" ] && continue
-    ln -sfn "${s%/}" "$dest"
-  done
+# ── Generic agents (Codex and other skills-aware CLIs): ~/.agents/skills ──
+if ! skip agents; then
+  [ -d "$PSTACK_DIR/pstack/skills" ] && link_skills "$PSTACK_DIR/pstack/skills" "$HOME/.agents/skills"
+  [ -d "$PONYTAIL_DIR/skills" ] && link_skills "$PONYTAIL_DIR/skills" "$HOME/.agents/skills"
 fi
 
 # ── Summary (short: a SessionStart hook puts stdout into the context) ─────
